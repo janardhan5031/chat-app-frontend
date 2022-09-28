@@ -1,0 +1,75 @@
+body{
+    height: 93vh;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    padding-top: 3rem;
+    background-image: linear-gradient(to right top, #6298c0, #44b3cd, #44cbc9, #75e0b5, #b7f09dd8);
+}
+.main_container{
+    position: relative;
+    margin-top: 1rem;
+    box-shadow: 2px 2px 5px 4px rgba(0,0,0,0.3);
+    border-radius: 1rem;
+    max-height: 22rem;
+    width: 20rem;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 1rem;
+}
+.signUp_btn_container{
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+form div{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+}
+
+form{
+    width: 100%;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+input{
+    width: 70%;
+    height: 1.5rem;
+    outline-width: 1px;
+    outline-color: #75e0b5;
+}
+form div , input{
+    margin: 0.2rem 0;
+}
+.signUp_btn_container button {
+    width: 6rem;
+    height: 2rem;
+    text-align: center;
+    background-color: tomato;
+    color: white;
+    border: none;
+    border-radius: 1rem;
+}
+
+.signIn_route{
+    position: absolute;;
+    bottom: 1rem;
+}
+.signIn_route button{
+    background-color: white;
+    border: none;
+    text-decoration:underline;
+    cursor: pointer;
+}
+.signIn_route button:hover{
+    color: turquoise;
+}
