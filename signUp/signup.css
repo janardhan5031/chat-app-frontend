@@ -13,7 +13,7 @@ body{
     box-shadow: 2px 2px 5px 4px rgba(0,0,0,0.3);
     border-radius: 1rem;
     max-height: 22rem;
-    width: 20rem;
+    width: 22rem;
     background-color: white;
     display: flex;
     flex-direction: column;
@@ -26,6 +26,7 @@ body{
     flex-direction: column;
     align-items: center;
 }
+
 form div{
     display: flex;
     flex-direction: row;
@@ -58,18 +59,22 @@ form div , input{
     color: white;
     border: none;
     border-radius: 1rem;
+    cursor: pointer;
 }
 
 .signIn_route{
     position: absolute;;
     bottom: 1rem;
 }
-.signIn_route button{
+a{
+    color:inherit
+}
+.signIn_route button , a{
     background-color: white;
     border: none;
     text-decoration:underline;
     cursor: pointer;
 }
-.signIn_route button:hover{
+.signIn_route button:hover,a:hover{
     color: turquoise;
 }
