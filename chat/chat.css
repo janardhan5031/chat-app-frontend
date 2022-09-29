@@ -1,0 +1,114 @@
+body{
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.chat_main_container{
+    position: absolute;
+    top:0;bottom: 0;left: 0;right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-image: linear-gradient(to right top, #6298c0, #44b3cd, #44cbc9, #75e0b5, #b7f09dd8);
+
+}
+.chat_header{
+    position: fixed;
+    top: 0;
+    border: 1px solid salmon;
+    height: 2rem;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: slateblue;
+    color: antiquewhite;
+}
+::-webkit-scrollbar {   /* this feature is only works on chrome & safari */
+    display: none;
+}
+table{
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.chat_body{
+    position: fixed;    
+    top: 3rem;
+    width: 90%;
+    height: 80%;
+    /* overflow: auto;  scrolling */
+    padding: 0.5rem 1rem;
+    background-color: white;
+    box-shadow: 2px 2px 4px 4px rgba(0,0,0,0.3);
+    border-radius: 2rem;
+    display: flex;
+}
+.members_list{
+    position: relative;
+    width: 30%;
+    border: 1px solid tomato;
+    margin-right: 2px;
+    padding: 0.8rem 3px ;
+    border-radius: 1rem;
+    overflow: auto; /** scrolling */
+}
+.profile{
+    margin: 0.2rem 0;
+    display: flex;
+    align-items: center;
+    background-color: lightblue;
+    padding: 5px;
+    border-radius: 0.5rem;
+}
+.profile div p, h4{
+    margin: 0;
+    padding: 0;
+}
+.profile_img{
+    width: 2rem;
+    height: 2rem;
+    margin-right: 5px;
+}
+.profile_img img{
+    width:inherit;
+    height: inherit;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.parent_user{
+    color: darkblue;
+}
+tr td p{
+    margin: 0.5rem 0;
+}
+tr td.user{
+    width: 5rem;
+}
+.member_chat{
+    position: relative;
+    width: 70%;
+    margin-left: 2px;
+    border: 1px solid tomato;
+    border-radius: 1rem;
+    padding: 0 1rem;
+    overflow: auto; /** scrolling */
+}
+
+
+.chat_footer{
+    position: fixed;
+    bottom:0;
+    border: 1px solid slateblue;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 3rem;
+    background-color: slateblue;
+}
