@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CHAT</title>
     <link rel="stylesheet" href="./chat.css" type="text/css">
-    <script src="./chat.js"></script>
+    <script src="./chat.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js" defer></script>
+
 </head>
 <body>
     <div class="chat_main_container">
@@ -49,7 +51,7 @@
                         <td class="msg"><p>message</p></td>
                     </tr>
                     <tr class="parent_user">
-                        <td class="p_user"><p>user</p></td>
+                        <td class="p_user"><p>You</p></td>
                         <td class="p_msg"><p>message hkfjhsjfhksjhfhfkjhfhsjfhdsjhfjp</p></td>
                     </tr>
                     
@@ -58,7 +60,7 @@
             </div>
         </div>
         <div class="chat_footer">
-            <div class="chat_input">
+            <div class="chat_input" id="jani">
                 <form action="">
                     <input type="text" id="chat_text">
                     <button type="submit" id="send_btn">send</button>

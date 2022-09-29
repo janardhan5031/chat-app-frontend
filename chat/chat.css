@@ -18,7 +18,6 @@ body{
 .chat_header{
     position: fixed;
     top: 0;
-    border: 1px solid salmon;
     height: 2rem;
     width: 100%;
     margin: 0;
@@ -111,4 +110,11 @@ tr td.user{
     justify-content: center;
     height: 3rem;
     background-color: slateblue;
+}
+.chat_input{
+    width: 50%;
+}
+.chat_input input{
+    width: 80%;
+    outline-style: none;
 }

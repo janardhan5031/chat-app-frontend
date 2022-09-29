@@ -18,11 +18,12 @@ document.getElementById('main_container').addEventListener('click',(e)=>{
             axios.post('http://localhost:5000/user/sign_up',{name,email,number,password})
             .then((result)=>{
                 console.log(result);
-                if(result.status ===203){
+                if(result.status ===203){   // somehting went wrong with data
                     window.alert(result.data.msg)
                 }
                 else{
                     window.alert(result.data.msg);
+                    window.location.href ='../sign_in/sign_in.html';
                 }
             })
             .catch(err => console.log(err));

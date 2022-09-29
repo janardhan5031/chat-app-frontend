@@ -11,6 +11,7 @@ document.getElementById('signIn_btn').addEventListener('click',(e)=>{
             if(result.status===200){
                 window.alert(result.data.msg);
                 localStorage.setItem('token',result.data.token);
+                window.location.href = '../chat/chat.html';
             }else{
                 window.alert(result.data.msg)
             }
