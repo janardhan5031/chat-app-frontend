@@ -18,7 +18,7 @@ function getAllUsers(){
     // calling backend to get all users 
     axios.get(`http://localhost:5000/user/getAllUsers`,{headers:{"authorization":token}})
     .then(result =>{
-        console.log(result);
+        //console.log(result);
 
         // displaying all uses in users panal
         const members_list = document.getElementById('members_table').firstElementChild;
@@ -49,6 +49,11 @@ function getAllUsers(){
                 // getting the first chile_user chat
                 if(flag){
                     getConversation(data.id);
+
+                    //storing the contact_name in local storage if its exist or not, then removing and creating new one
+                    localStorage.removeItem('contact_name');
+                    localStorage.setItem('contact_name',data.name)
+    
                     flag=false;
                 }
             }
@@ -73,47 +78,113 @@ document.getElementById('members_table').addEventListener('click',(e)=>{
 // getting a parson's conversation
 function getConversation(recieving_person_id){
 
-    axios.get(`http://localhost:5000/chat/get-all?send_to=${recieving_person_id}`,{headers:{"authorization":token}})
+    // removing the existing msgs from display
+    const chat_parent = document.getElementById('chat_table');
+    chat_parent.innerHTML ='';
+
+    // storign the child_user id in local storage 
+    localStorage.setItem('send_to',recieving_person_id)
+
+    // first read all msgs from the local storage and displayi then in frontend
+    const old_msgs = JSON.parse(localStorage.getItem('old_msgs'));
+    if(!old_msgs){      // if there are no msgs in LS, get all msgs from backend and store in LS ans showing them to client
+
+        getMsgsFromBackend(recieving_person_id)
+
+    }else{                 // else read all msgs from LS and then get new msgs from backend
+        displayingMessages(old_msgs);
+    }
+
+    
+    // getting new msgs from backend for every second
+    setInterval(()=>{
+
+        getMsgsFromBackend( recieving_person_id );
+        
+    },1000)
+    
+
+      
+}
+
+// getting new msgs from backend
+function getMsgsFromBackend( recieving_person_id){
+
+    let last_msg_id = JSON.parse(localStorage.getItem('last_msg_id'));
+
+    if(!last_msg_id){
+        last_msg_id = 0;
+    }
+    //console.log('jani ==='+ last_msg_id)
+
+    axios.get(`http://localhost:5000/chat/get-all?send_to=${recieving_person_id}&last_msg_id=${last_msg_id}`,{headers:{"authorization":token}})
     .then((result)=>{
-
-        // storign the child_user id in local storage 
-        localStorage.setItem('send_to',recieving_person_id)
-
-        console.log(result);
-        const chat_parent = document.getElementById('chat_table').firstElementChild;
-        chat_parent.innerHTML ='';
-
+        
+        //console.log(result);
+        
         if(result.status ===201){
-            result.data.forEach((data)=>{
-                
-                // check the msg is blongs to parent_user or child_user by id stored in the local storage
-                // if id is matched with the parent id then that msg is belongs to parent else chlid
-                const parent_user = JSON.parse(localStorage.getItem('user_data'));
-                if(data.userId===JSON.parse(parent_user.id)){
-                    const ele =`
-                    <tr class="parent_user">
-                        <td class="p_user"><p>You</p></td>
-                        <td class="p_msg"><p>${data.msg}</p></td>
-                    </tr>`;
-                    chat_parent.innerHTML+=ele;
-                }else{
-                    const ele =`
-                    <tr class="child_user">
-                        <td class="p_user"><p>child name</p></td>
-                        <td class="p_msg"><p>${data.msg}</p></td>
-                    </tr>`;
-                    chat_parent.innerHTML+=ele;
-                }
+            
+            // stroing the  previous and new msgs in local storages
+            const new_msgs = result.data;
+            const old_msgs = JSON.parse(localStorage.getItem('old_msgs'));
+            
+            localStorage.removeItem('old_msgs');
+            if(!old_msgs){
+                localStorage.setItem('old_msgs',JSON.stringify(new_msgs));
+            }else{
+                localStorage.setItem('old_msgs',JSON.stringify(old_msgs.concat(new_msgs)))
+            }
 
-            })
+            // displaying the new msg in frontend
+            displayingMessages(result.data);
+           
         }else if(result.status ===203){
-            window.alert(result.data.msg);
+            //window.alert(result.data.msg);
+            console.log(result.data.msg+'  but i am on duty! ');
         }else{
             window.alert('something went wrong');
         }
 
     })
-    .catch(err=>console.log(err));  
+    .catch(err=>console.log(err));
+
+}
+
+// displaying the msgs in user interfase
+function displayingMessages(array){
+
+    const chat_parent = document.getElementById('chat_table');
+
+    array.forEach((data,index)=>{
+                
+        // check the msg is blongs to parent_user or child_user by id stored in the local storage
+        // if id is matched with the parent id then that msg is belongs to parent else chlid
+        const parent_user = JSON.parse(localStorage.getItem('user_data'));
+        if(data.userId===JSON.parse(parent_user.id)){
+            const ele =`
+            <tr class="parent_user">
+                <td class="p_user"><p>You</p></td>
+                <td class="p_msg"><p>${data.msg}</p></td>
+            </tr>`;
+            chat_parent.innerHTML+=ele;
+        }else{
+
+            // reading the contact_name from local storage 
+            const contact_name= localStorage.getItem('contact_name');
+            //console.log(contact_name)
+
+            const ele =`
+            <tr class="child_user">
+                <td class="p_user"><p>${contact_name}</p></td>
+                <td class="p_msg"><p>${data.msg}</p></td>
+            </tr>`;
+            chat_parent.innerHTML+=ele;
+        }
+    })
+
+    // storing the last msg id in LS
+    localStorage.setItem('last_msg_id',array[array.length-1].id);
+    
 }
 
 
@@ -131,25 +202,10 @@ document.getElementById('send_btn').addEventListener('click',(e)=>{
     .then(result=>{
         console.log(result);
 
-        // getting the table with id
-        const chat_parent = document.getElementById('chat_table').firstElementChild;
-        
-        // msg is successfully stored in database, then show it in interface
-        if(result.status ===201){
+        // displaying the new msg will triggered by setTimeInterval function
 
-            // appending the new sent msg in interface
-            const ele =`
-            <tr class="parent_user">
-                <td class="p_user"><p>You</p></td>
-                <td class="p_msg"><p>${result.data.msg}</p></td>
-            </tr>`
-            chat_parent.innerHTML +=ele;
-            
-            // removing the text from the input field
-            document.getElementById('chat_text').value ='';
-        }else{
-            window.alert('unable to send your message');
-        }
+        // removing the text from the input field
+        document.getElementById('chat_text').value ='';
     })  
     .catch(err =>console.log(err));
 
