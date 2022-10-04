@@ -20,7 +20,7 @@ function getAllUsers(){
     
     // calling backend to get all users 
     axios.get(`http://localhost:5000/user/getAllUsers`,{headers:{"authorization":token}})
-    .then(result =>{
+    .then(async (result) =>{
         console.log(result);
 
         // storing the members list in local storage
@@ -29,8 +29,15 @@ function getAllUsers(){
         // displaying all uses in users panal
         displayAllUsers(result.data);
 
-        // displaying the first user profile details in chat box module
-        display_user_details_in_chat_module(result.data[0].id)
+        
+        // storiing the group flag as false becase we are first displaying one - one conversataion
+        if(result.data.length > 0){
+            await flag();
+
+            // displaying the first user profile details in chat box module
+            await display_user_details_in_chat_module(result.data[0].name)
+
+        }
 
         // getting the first user conversation
         getConversation(result.data[0].id);
@@ -41,6 +48,10 @@ function getAllUsers(){
     })  
     .catch(err => console.log(err));
 
+}
+
+async function flag(){
+    localStorage.setItem('isgroup',false)
 }
 
 // getting all groups on reload from backend
@@ -98,59 +109,74 @@ function displayAllUsers(list){
 }
 
 // showing a particular person's convesation by click on him
-document.getElementById('members_table').addEventListener('click', async(e)=>{
+document.getElementById('members_table').addEventListener('click',(e)=>{
 
     //console.log(e.target.parentElement.parentElement.classList.contains('groupConversation'))
 
     // if the clicked element is group element, store group activation, id in LS
     if(e.target.parentElement.parentElement.classList.contains('groupConversation')){
-        const groupId = e.target.parentElement.parentElement.id;
+        const parent = e.target.parentElement.parentElement;
+        localStorage.setItem('isgroup',true);
+        localStorage.setItem('send_to',parent.id);
+
+        conversaion_name = parent.children[1].children[0].innerText;
+        console.log(conversaion_name)
+
+        display_user_details_in_chat_module(conversaion_name)
+
+        localStorage.setItem('contact_name',conversaion_name);
+
+        getConversation(parent.id);
+    }else{
+
+        const parent = e.target.parentElement.parentElement;
+        localStorage.setItem('isgroup',false);
+        localStorage.setItem('send_to',parent.id);
+
+        conversaion_name = parent.children[1].children[0].innerText;
+        console.log(conversaion_name)
+
+        display_user_details_in_chat_module(conversaion_name)
+
+        localStorage.setItem('contact_name',conversaion_name);
+       
+        getConversation(parent.id);
     }
 
-    if(e.target.parentElement.parentElement.classList.contains('profile')){
-        //console.log(e.target.parentElement.parentElement)
-        const recieving_person_id = e.target.parentElement.parentElement.id;
-
-        display_user_details_in_chat_module(recieving_person_id)
-
-        // storing the contact name in local storage 
-        let contact_name;
-        JSON.parse(localStorage.getItem('contacts')).forEach(member =>{
-            if(member.id === parseInt(recieving_person_id)){
-                contact_name = member.name;
-            }
-        })
-
-        localStorage.setItem('contact_name',contact_name);
-
-        await getConversation(recieving_person_id);
-    }
 })
 
 // displaying a particular person's profile data in chat module
-function display_user_details_in_chat_module(userId){
-
-    const child = document.getElementById(userId);
+async function display_user_details_in_chat_module(conversaion_name){
    
-    const dp = child.children[0].children[0].src;
-    const name = child.children[1].children[0].innerText;
-
     const parent = document.getElementById('contact_profile');
-    parent.innerHTML = `
-    <div class="profile" >
+
+    const ele =`
+    <div class="add_group_member" >
+        <button type="button" id="add_group_member">ADD</button>
+    </div>`;
+
+    button = await JSON.parse(localStorage.getItem('isgroup')) ? ele : '';
+
+    parent.innerHTML =`
+    <div class="profile" id=" usr_id">
         <div class="profile_img" id="profile_img">
-            <img src=${dp} alt="">
+            <img src="https://media.istockphoto.com/photos/close-up-red-seed-of-micky-mouse-flower-with-blur-background-picture-id1415625631?b=1&k=20&m=1415625631&s=170667a&w=0&h=h0aMS--ulXT5E1p9OCHe2sPQZs99Qy2xwpUTQeR9u5g=" alt="">
         </div>
         <div>
-            <h4>${name}</h4>
+            <h4>${conversaion_name}</h4>
             <p>last seed at</p>
         </div>
-    </div>`;
+        ${button}
+    </div>`
+    if(JSON.parse(localStorage.getItem('isgroup'))){
+
+        await add_group_member();
+    }
 
 }
 
 // getting a parson's conversation
-async function getConversation(recieving_person_id){
+ async function getConversation(recieving_person_id){
 
     // removing the existing msgs from display
     const chat_parent = document.getElementById('chat_table');
@@ -168,14 +194,16 @@ async function getConversation(recieving_person_id){
     }else{                 // else read all msgs from LS and then get new msgs from backend
         await displayingMessages(old_msgs);
     }
-    
-    
+
+    //getMsgsFromBackend();
     
     // getting new msgs from backend for every second
-    setInterval(()=>{
-
-        
-        //getMsgsFromBackend();
+    var flag =false;
+    setInterval(async()=>{
+        console.log(' setinterval ',flag)
+        if( !flag){
+            await getMsgsFromBackend();
+        }
         
     },1000)
     
@@ -192,13 +220,17 @@ async function getMsgsFromBackend(){
     const token = localStorage.getItem('token');
     const recieving_person_id = localStorage.getItem('send_to')
 
+    const path = JSON.parse(localStorage.getItem('isgroup')) ? 'get-grp-msgs' : 'get-all' ;
+
     console.log(last_msg_id)
-    await axios.get(`http://localhost:5000/chat/get-all?send_to=${recieving_person_id}&last_msg_id=${last_msg_id}`,{headers:{"authorization":token}})
-    .then((result)=>{
+    await axios.get(`http://localhost:5000/chat/${path}?send_to=${recieving_person_id}&last_msg_id=${last_msg_id}`,{headers:{"authorization":token}})
+    .then(async(result)=>{
         
         console.log(result);
         
         if(result.status ===201){
+            flag=true;
+            console.log(flag)
             
             // stroing the  previous and new msgs in local storages
             const new_msgs = result.data;
@@ -212,7 +244,7 @@ async function getMsgsFromBackend(){
             }
 
             // displaying the new msg in frontend
-            displayingMessages(result.data);
+            await displayingMessages(result.data);
            
         }else if(result.status ===203){
             //window.alert(result.data.msg);
@@ -238,18 +270,31 @@ async function displayingMessages(array){
     const child_user = parseInt(localStorage.getItem('send_to'))
     //console.log(child_user)
 
-    const flt_array = await array.filter((data =>{
-        //console.log(data.userId)
-        if(data.send_to == child_user || data.send_to ==  parent_user 
-            && data.userId == parent_user || data.userId ==child_user){
-            return data;
-        }
-    }))
-    
-    console.log('filtered array',flt_array)
+    let flt_array;
+    if(JSON.parse(localStorage.getItem('isgroup'))){
+        flt_array = await array.filter((data =>{
+            //console.log(data.userId)
+            if(data.groupId == child_user){
+                return data;
+            }
+        }))
+    }else{
 
-    flt_array.forEach((data,index)=>{
+        flt_array = await array.filter((data =>{
+            //console.log(data.userId)
+            if(data.send_to == child_user || data.send_to ==  parent_user 
+                && data.userId == parent_user || data.userId ==child_user ){
+                return data;
+            }
+        }))
+    }
+    
+    //console.log('filtered array',flt_array)
+
+    await flt_array.forEach((data,index)=>{
         
+
+        ///console.log(data.groupId)
         // checking the conversation blongs to respective people or group 
 
         const parent_user = JSON.parse(localStorage.getItem('user_data'));
@@ -283,7 +328,6 @@ async function displayingMessages(array){
 
     })
 
-    
     if(flt_array.length>0){
         // storing the last msg id in LS
         localStorage.setItem('last_msg_id',flt_array[flt_array.length-1].id);
@@ -291,6 +335,7 @@ async function displayingMessages(array){
     if(flt_array.length===0){
         localStorage.setItem('last_msg_id',0)
     }
+ 
     
 }
 
@@ -303,13 +348,14 @@ document.getElementById('send_btn').addEventListener('click',(e)=>{
     const send_to = localStorage.getItem('send_to');
     console.log(send_to)
 
+    const path = JSON.parse(localStorage.getItem('isgroup')) ? 'chat/send-to-grp' : 'chat/send' ;
     //console.log(msg,'       ', token)
 
-    axios.post(`http://localhost:5000/chat/send?send_to=${send_to}`,{msg},{headers:{"authorization":token}})
+    axios.post(`http://localhost:5000/${path}?send_to=${send_to}`,{msg},{headers:{"authorization":token}})
     .then(result=>{
         console.log(result);
 
-        // displaying the new msg will triggered by setTimeInterval function
+        // displaying the new msg will triggered by setTimeInterval function and store that msg in LS
 
         // removing the text from the input field
         document.getElementById('chat_text').value ='';
@@ -358,6 +404,7 @@ document.getElementById('add_group_name').addEventListener('click',(e) =>{
 
 });
 
+// showing all groups in user contacts table
 function showing_group_in_interface(groupId,groupName){
     
     const members_list = document.getElementById('members_table');
@@ -379,3 +426,111 @@ function showing_group_in_interface(groupId,groupName){
     members_list.innerHTML += ele;
 
 }
+
+// activating and de-activating add group member to group container
+async function add_group_member(){
+
+    const add_btn = document.getElementById('add_group_member');
+    const add_container = document.getElementById('add_group_members_container');
+    
+    add_btn.addEventListener('click',async (e)=>{
+        e.preventDefault();
+        //console.log('jani')
+    
+        if(add_container.classList.contains('active')){
+            add_container.classList.remove('active');
+            add_btn.innerText = 'ADD';
+            add_btn.style.color = 'black'
+    
+        }else{
+            add_container.classList.add('active');
+            add_btn.innerText = '✕';
+            add_btn.style.color = 'red'
+
+
+            // showing members to add into group
+            await show_members_to_add_to_group();
+
+            await adding_member_to_group();
+
+        }
+        
+    })
+}
+
+// showing the memgers to add into the group
+async function show_members_to_add_to_group(){
+    const container = document.getElementById('add_group_members_container');
+    container.innerHTML = '';
+
+    //console.log('janiq')
+
+    const members_list = JSON.parse(localStorage.getItem('contacts'));
+    members_list.forEach( (member) =>{
+        const ele =`
+        <div class="group_member_ele" id=${member.id}>
+            <label for=${member.id}>
+                <div class="profile_img">
+                    <img src="https://media.istockphoto.com/photos/close-up-red-seed-of-micky-mouse-flower-with-blur-background-picture-id1415625631?b=1&k=20&m=1415625631&s=170667a&w=0&h=h0aMS--ulXT5E1p9OCHe2sPQZs99Qy2xwpUTQeR9u5g=" alt="">
+                </div>
+            </label>
+            <div class="contact_name">
+                <h4>${member.name}</h4>
+            </div>
+            <div class="selection_div" id="check">
+                <input type="checkbox" id=${member.id}>
+            </div>
+        </div>`;
+        container.innerHTML += ele;
+    })
+}
+
+// adding the member by click on check box to the group and showing the status of request
+async function adding_member_to_group(){
+
+    const main_container = document.getElementById('add_group_members_container');
+
+    main_container.addEventListener('click',(e)=>{
+
+        //console.log('jani')
+        e.preventDefault();
+
+        //console.log(e.target.parentElement.parentElement.parentElement.children[2].children[0])
+        const event = e.target.parentElement.parentElement;
+        let parent;
+        let check;
+        if(event.parentElement.className ==='group_member_ele'){
+            parent =event.parentElement;
+            check = event.parentElement.children[2].children[0];
+          
+        }else if(event.className === 'group_member_ele'){
+            parent=event;
+            check = event.children[2].children[0];
+        }
+        check.checked = true;
+        check.parentElement.parentElement.children[1].children[0].innerText +=' is added'
+        console.log(check.checked)
+        setTimeout(()=>{
+            check.disabled =true
+        },2000)
+        setTimeout(()=>{
+            parent.style.transform ='translatex(150%)'  
+        },3000)
+           
+        const memberId = check.id
+        
+        // now we need to send that member id to add to this group in backend
+        const token = localStorage.getItem('token');
+        const groupId = localStorage.getItem('send_to');
+
+        axios.post(`http://localhost:5000/group/add-member`,{groupId,userId:memberId},{headers:{"authorization":token}})
+        .then((result)=>{
+            //console.log(result)
+            window.alert(result.data.msg)
+        })
+        .catch(err => console.log(err))
+        
+    })
+
+}
+
