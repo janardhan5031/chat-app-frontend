@@ -490,24 +490,16 @@ async function group_controlls(){
 
             let key;
             // if admin click on add button, the he can be able to add member to group by sowing the member in left container
-            if(e.target.id ==='add_member'){
-                key ='add_new_member';
-            }
+            if(e.target.id ==='add_member') key ='add_new_member'
 
             // removing the existing member from the group
-            if(e.target.id ==='remove_member'){
-                key ='remove_member';
-            }
+            else if(e.target.id ==='remove_member')  key ='remove_member'
 
             // adding the existing member as admin to group
-            if(e.target.id==='add_admin'){
-                key ='add_admin';
-            }
+            else if(e.target.id==='add_admin')   key ='add_admin'
 
             // removing the admin status of member from group
-            if(e.target.id === 'remove_admin'){
-                key='remove_admin';
-            }
+            else if(e.target.id === 'remove_admin')  key='remove_admin'
             
             await show_members_in_left_container(key);
             await update_member_status_in_container(key);
@@ -654,49 +646,12 @@ async function update_group_in_backend(key, userId){
     const token = localStorage.getItem('token');
     const groupId = localStorage.getItem('send_to');
 
-    // if the key => 'add_new_member', then that user need to add to group in backend
-    if(key === 'add_new_member'){
-        // now we need to send that member id to add to this group in backend
-
-        axios.post(`http://localhost:5000/group/add_new_member`,{groupId,userId},{headers:{"authorization":token}})
-        .then((result)=>{
-            //console.log(result)
-            window.alert(result.data.msg)
-        })
-        .catch(err => console.log(err))
-    }
-    // if the key => 'remove_member', that member need to remove from backend
-    else if(key==='remove_member'){
-
-        console.log('remove btn clicked')
-        axios.post(`http://localhost:5000/group/remove_member`,{groupId,userId},{headers:{"authorization":token}})
-        .then((result)=>{
-            //console.log(result)
-            window.alert(result.data.msg)
-        })
-        .catch(err => console.log(err))
-    }
-
-    else if( key === 'add_admin'){
-        console.log('add admin');
-        axios.post(`http://localhost:5000/group/add_admin`,{groupId,userId},{headers:{"authorization":token}})
-        .then((result)=>{
-            //console.log(result)
-            window.alert(result.data.msg)
-        })
-        .catch(err => console.log(err))
-        
-    }
-
-    else if( key ==='remove_admin'){
-        console.log('remove admin status')
-        axios.post(`http://localhost:5000/group/remove_admin`,{groupId,userId},{headers:{"authorization":token}})
-        .then((result)=>{
-            //console.log(result)
-            window.alert(result.data.msg)
-        })
-        .catch(err => console.log(err))
-    }
+    await axios.post(`http://localhost:5000/group/${key}`,{groupId,userId},{headers:{"authorization":token}})
+    .then((result)=>{
+        //console.log(result)
+        window.alert(result.data.msg)
+    })
+    .catch(err => console.log(err))
 
 }
 
