@@ -7,10 +7,12 @@
     <title>CHAT</title>
     <link rel="stylesheet" href="./chat.css" type="text/css">
     <script src="./chat.js" defer></script>
+    <!--script src="./chat2.js" defer></script-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js" defer></script>
 
 </head>
 <body>
+
     <div class="chat_main_container">
         <div class="chat_header"><p>CHAT</p></div>
         <div class="chat_body">
@@ -47,6 +49,7 @@
             </div>
 
             <div class="member_chat">
+
                 <div class="contact_profile" id="contact_profile">
 
                     <div class="profile" id=" usr_id">
@@ -58,14 +61,21 @@
                             <p>last seed at</p>
                         </div>
                         <div class="add_group_member" >
-                            <button type="button" id="add_group_member">ADD</button>
+                            <button type="button" id="group_controll">controlls</button>
                         </div>
                     </div>
 
                 </div>
+                
                 <div class="chat_history_container">
+                    <div class="admin_controlls" id="admin_controlls">
+                        <button type="button" id="add_admin">Add Admin</button> 
+                        <button type="button" id="remove_admin">Remove Admin</button>
+                        <button type="button" id="add_member">ADD</button>
+                        <button type="button" id="remove_member"> REMOVE</button>
+                    </div>
 
-                    <div class="chat_history">
+                    <div class="chat_history" id="chat_history">
     
                         <table id="chat_table">
                             <tr class="child_user">
@@ -137,7 +147,7 @@
                     </div>
                     <div class="add_group_members_container" id="add_group_members_container">
                         
-                        <div class="group_member_ele">
+                        <!--div class="group_member_ele">
                             <label for="member_id">
                                 <div class="profile_img">
                                     <img src="https://media.istockphoto.com/photos/close-up-red-seed-of-micky-mouse-flower-with-blur-background-picture-id1415625631?b=1&k=20&m=1415625631&s=170667a&w=0&h=h0aMS--ulXT5E1p9OCHe2sPQZs99Qy2xwpUTQeR9u5g=" alt="">
@@ -151,7 +161,7 @@
                                 <input type="checkbox" id="check">
                             </div>
                             
-                        </div>
+                        </div-->
                         
                     </div>
                     

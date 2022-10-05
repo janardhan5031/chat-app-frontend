@@ -118,13 +118,13 @@ document.getElementById('members_table').addEventListener('click',(e)=>{
         const parent = e.target.parentElement.parentElement;
         localStorage.setItem('isgroup',true);
         localStorage.setItem('send_to',parent.id);
-
+        
         conversaion_name = parent.children[1].children[0].innerText;
         console.log(conversaion_name)
+        localStorage.setItem('contact_name',conversaion_name);
 
         display_user_details_in_chat_module(conversaion_name)
 
-        localStorage.setItem('contact_name',conversaion_name);
 
         getConversation(parent.id);
     }else{
@@ -132,13 +132,13 @@ document.getElementById('members_table').addEventListener('click',(e)=>{
         const parent = e.target.parentElement.parentElement;
         localStorage.setItem('isgroup',false);
         localStorage.setItem('send_to',parent.id);
-
+        
         conversaion_name = parent.children[1].children[0].innerText;
         console.log(conversaion_name)
+        localStorage.setItem('contact_name',conversaion_name);
 
         display_user_details_in_chat_module(conversaion_name)
 
-        localStorage.setItem('contact_name',conversaion_name);
        
         getConversation(parent.id);
     }
@@ -152,12 +152,12 @@ async function display_user_details_in_chat_module(conversaion_name){
 
     const ele =`
     <div class="add_group_member" >
-        <button type="button" id="add_group_member">ADD</button>
+    <button type="button" id="group_controll">controlls</button>
     </div>`;
 
     button = await JSON.parse(localStorage.getItem('isgroup')) ? ele : '';
 
-    parent.innerHTML =`
+    parent.innerHTML = `
     <div class="profile" id=" usr_id">
         <div class="profile_img" id="profile_img">
             <img src="https://media.istockphoto.com/photos/close-up-red-seed-of-micky-mouse-flower-with-blur-background-picture-id1415625631?b=1&k=20&m=1415625631&s=170667a&w=0&h=h0aMS--ulXT5E1p9OCHe2sPQZs99Qy2xwpUTQeR9u5g=" alt="">
@@ -170,10 +170,13 @@ async function display_user_details_in_chat_module(conversaion_name){
     </div>`
     if(JSON.parse(localStorage.getItem('isgroup'))){
 
-        await add_group_member();
+        await get_group_members_from_backend();
+
+        await group_controlls();
     }
 
 }
+
 
 // getting a parson's conversation
  async function getConversation(recieving_person_id){
@@ -195,15 +198,12 @@ async function display_user_details_in_chat_module(conversaion_name){
         await displayingMessages(old_msgs);
     }
 
-    //getMsgsFromBackend();
+    getMsgsFromBackend();
     
     // getting new msgs from backend for every second
-    var flag =false;
-    setInterval(async()=>{
-        console.log(' setinterval ',flag)
-        if( !flag){
-            await getMsgsFromBackend();
-        }
+    setInterval(()=>{
+    
+        //getMsgsFromBackend();
         
     },1000)
     
@@ -229,8 +229,6 @@ async function getMsgsFromBackend(){
         console.log(result);
         
         if(result.status ===201){
-            flag=true;
-            console.log(flag)
             
             // stroing the  previous and new msgs in local storages
             const new_msgs = result.data;
@@ -283,7 +281,7 @@ async function displayingMessages(array){
         flt_array = await array.filter((data =>{
             //console.log(data.userId)
             if(data.send_to == child_user || data.send_to ==  parent_user 
-                && data.userId == parent_user || data.userId ==child_user ){
+                && data.userId == parent_user || data.userId ==child_user && !data.groupId){
                 return data;
             }
         }))
@@ -313,9 +311,16 @@ async function displayingMessages(array){
             chat_parent.innerHTML+=ele;
         }else{
 
+            // if msg is from group, then find the who send it to group else read the contact name from LS
+            const userId = data.userId;
+            let contact;
+            JSON.parse(localStorage.getItem('contacts')).forEach((data)=> {
+                if(data.id ==userId){ contact = data.name}
+            })
+
             // reading the contact_name from local storage 
-            const contact_name= localStorage.getItem('contact_name');
-            //console.log(contact_name)
+            const contact_name= JSON.parse(localStorage.getItem('isgroup')) ? contact : localStorage.getItem('contact_name');
+            console.log(contact_name)
 
             const ele =`
             <tr class="child_user">
@@ -427,70 +432,193 @@ function showing_group_in_interface(groupId,groupName){
 
 }
 
-// activating and de-activating add group member to group container
-async function add_group_member(){
 
-    const add_btn = document.getElementById('add_group_member');
+// getting active group members from backend
+async function get_group_members_from_backend(){
+    const groupId = localStorage.getItem('send_to');
+    const token = localStorage.getItem('token');
+
+    // getting the all users of respective active group
+    axios.get(`http://localhost:5000/group/get-members?groupId=${groupId}`,{headers:{"authorization":token}})
+    .then(result=>{
+        console.log(result)
+        if(result.status ===200){
+            localStorage.setItem('group_members',JSON.stringify(result.data))
+        }else{
+            window.alert('something went wrong. please try again later ')
+        }
+    })
+    .catch(err => console.log(err))
+
+}
+
+
+// activating and de-activating add group member to group container
+async function group_controlls(){
+
+    const group_controll_icon = document.getElementById('group_controll');
     const add_container = document.getElementById('add_group_members_container');
+    const admin_controlls = document.getElementById('admin_controlls');
+    const chat_history = document.getElementById('chat_history');
     
-    add_btn.addEventListener('click',async (e)=>{
+    group_controll_icon.addEventListener('click',async (e)=>{
         e.preventDefault();
         //console.log('jani')
     
         if(add_container.classList.contains('active')){
+            // de-activaating left container to show members
             add_container.classList.remove('active');
-            add_btn.innerText = 'ADD';
-            add_btn.style.color = 'black'
+            // second top container to show the admin controlls
+            admin_controlls.classList.remove('active');
+            group_controll_icon.innerText = 'controlls';
+            group_controll_icon.style.color = 'black'
+            chat_history.style.height ='100%'
     
         }else{
+            // activating the left conatiner to show members and compressing the chat container accordingly
             add_container.classList.add('active');
-            add_btn.innerText = '✕';
-            add_btn.style.color = 'red'
-
-
-            // showing members to add into group
-            await show_members_to_add_to_group();
-
-            await adding_member_to_group();
+            chat_history.style.height ='91%';
+            // activating admin controller container
+            admin_controlls.classList.add('active');
+            group_controll_icon.innerText = '✕';
+            group_controll_icon.style.color = 'red'
 
         }
+
+        // listening all events at admin controlls container 
+        admin_controlls.addEventListener('click',async (e)=>{
+
+            let key;
+            // if admin click on add button, the he can be able to add member to group by sowing the member in left container
+            if(e.target.id ==='add_member'){
+                key ='add_new_member';
+            }
+
+            // removing the existing member from the group
+            if(e.target.id ==='remove_member'){
+                key ='remove_member';
+            }
+
+            // adding the existing member as admin to group
+            if(e.target.id==='add_admin'){
+                key ='add_admin';
+            }
+
+            // removing the admin status of member from group
+            if(e.target.id === 'remove_admin'){
+                key='remove_admin';
+            }
+            
+            await show_members_in_left_container(key);
+            await update_member_status_in_container(key);
+
+        })
+
+
         
     })
 }
 
 // showing the memgers to add into the group
-async function show_members_to_add_to_group(){
+async function show_members_in_left_container(key){
     const container = document.getElementById('add_group_members_container');
     container.innerHTML = '';
 
     //console.log('janiq')
 
-    const members_list = JSON.parse(localStorage.getItem('contacts'));
-    members_list.forEach( (member) =>{
-        const ele =`
-        <div class="group_member_ele" id=${member.id}>
-            <label for=${member.id}>
+    // existing group member's ids list
+    const group_members = new Set(JSON.parse(localStorage.getItem('group_members')).map( member => member.userId));
+   
+    console.log(group_members)
+
+    // all contacts list in LS
+    const contacts = JSON.parse(localStorage.getItem('contacts'));
+    // if the given key => add_new_member (i.e add new members to group)
+    if(key==='add_new_member'){
+        contacts.forEach( (member) =>{
+            // compaing all members in contact list with group members list and showing who are not in group 
+            if(!group_members.has(member.id)){
+                //console.log(member.id )
+                // before showing the members, we need to clear the container
+                container.innerHTML += element(member.id, member.name);
+            }
+        })
+    }
+    // if the key => remove_member (i.e remove existing member from the group)
+    else if(key ==='remove_member'){
+        console.log(JSON.parse(localStorage.getItem('group_members')))
+        JSON.parse(localStorage.getItem('group_members')).forEach(member =>{
+            // checking the member is not a current user/ admin of the group
+            if(member.userId !== JSON.parse(localStorage.getItem('user_data')).id){
+                // if the user is member is exist in group, search that user with userId from group in contacts list in LS
+                // show him the left container
+                contacts.forEach(user =>{
+                    console.log(user)
+                    if(user.id === member.userId){
+                        container.innerHTML += element(user.id,user.name)
+                    }
+                })
+            }
+        })
+    }
+
+    // adding existing user as admin to group
+    else if(key ==='add_admin'){
+        JSON.parse(localStorage.getItem('group_members')).forEach(member =>{
+            if(!member.isadmin){
+                return contacts.forEach(user =>{
+
+                    if(user.id === member.userId){
+
+                        return container.innerHTML += element(user.id, user.name);
+                    }
+                })
+            }
+        })
+    }
+
+    else if(key === 'remove_admin'){
+        JSON.parse(localStorage.getItem('group_members')).forEach(member =>{
+            if(member.isadmin){
+                console.log(member)
+                const list = contacts.filter(user => user.id === member.userId);
+                if(list.length>0){
+                    list.forEach(user =>{
+                        return container.innerHTML += element(user.id, user.name);
+                    })
+                }else{
+                    window.alert('no memer matched to this operation')
+                }
+                
+            }
+        })
+    }
+
+    function element(id,name){
+        return `
+        <div class="group_member_ele" id=${id}>
+            <label for=${id}>
                 <div class="profile_img">
                     <img src="https://media.istockphoto.com/photos/close-up-red-seed-of-micky-mouse-flower-with-blur-background-picture-id1415625631?b=1&k=20&m=1415625631&s=170667a&w=0&h=h0aMS--ulXT5E1p9OCHe2sPQZs99Qy2xwpUTQeR9u5g=" alt="">
                 </div>
             </label>
             <div class="contact_name">
-                <h4>${member.name}</h4>
+                <h4>${name}</h4>
             </div>
             <div class="selection_div" id="check">
-                <input type="checkbox" id=${member.id}>
+                <input type="checkbox" id=${id}>
             </div>
-        </div>`;
-        container.innerHTML += ele;
-    })
+        </div>`
+
+    }
 }
 
 // adding the member by click on check box to the group and showing the status of request
-async function adding_member_to_group(){
+async function update_member_status_in_container(key){
 
     const main_container = document.getElementById('add_group_members_container');
 
-    main_container.addEventListener('click',(e)=>{
+    main_container.addEventListener('click',async (e)=>{
 
         //console.log('jani')
         e.preventDefault();
@@ -512,25 +640,63 @@ async function adding_member_to_group(){
         console.log(check.checked)
         setTimeout(()=>{
             check.disabled =true
-        },2000)
-        setTimeout(()=>{
             parent.style.transform ='translatex(150%)'  
         },3000)
-           
-        const memberId = check.id
         
-        // now we need to send that member id to add to this group in backend
-        const token = localStorage.getItem('token');
-        const groupId = localStorage.getItem('send_to');
+           
+        await update_group_in_backend(key,check.id)
+        
+    })
 
-        axios.post(`http://localhost:5000/group/add-member`,{groupId,userId:memberId},{headers:{"authorization":token}})
+}
+
+async function update_group_in_backend(key, userId){
+    const token = localStorage.getItem('token');
+    const groupId = localStorage.getItem('send_to');
+
+    // if the key => 'add_new_member', then that user need to add to group in backend
+    if(key === 'add_new_member'){
+        // now we need to send that member id to add to this group in backend
+
+        axios.post(`http://localhost:5000/group/add_new_member`,{groupId,userId},{headers:{"authorization":token}})
+        .then((result)=>{
+            //console.log(result)
+            window.alert(result.data.msg)
+        })
+        .catch(err => console.log(err))
+    }
+    // if the key => 'remove_member', that member need to remove from backend
+    else if(key==='remove_member'){
+
+        console.log('remove btn clicked')
+        axios.post(`http://localhost:5000/group/remove_member`,{groupId,userId},{headers:{"authorization":token}})
+        .then((result)=>{
+            //console.log(result)
+            window.alert(result.data.msg)
+        })
+        .catch(err => console.log(err))
+    }
+
+    else if( key === 'add_admin'){
+        console.log('add admin');
+        axios.post(`http://localhost:5000/group/add_admin`,{groupId,userId},{headers:{"authorization":token}})
         .then((result)=>{
             //console.log(result)
             window.alert(result.data.msg)
         })
         .catch(err => console.log(err))
         
-    })
+    }
+
+    else if( key ==='remove_admin'){
+        console.log('remove admin status')
+        axios.post(`http://localhost:5000/group/remove_admin`,{groupId,userId},{headers:{"authorization":token}})
+        .then((result)=>{
+            //console.log(result)
+            window.alert(result.data.msg)
+        })
+        .catch(err => console.log(err))
+    }
 
 }
 
