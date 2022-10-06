@@ -301,14 +301,24 @@ async function displayingMessages(array){
         // if id is matched with the parent id then that msg is belongs to parent else chlid
         if(data.userId===JSON.parse(parent_user.id)){
 
+            if(data.msg){
+                const ele =`
+                <tr class="parent_user">
+                    <td class="p_user"><p>You</p></td>  
+                    <td class="p_msg"><p>${data.msg}</p></td>
+                </tr>`;
+                chat_parent.innerHTML+=ele;
+            }
             //console.log(data)
-            const ele =`
-            <tr class="parent_user">
-                <td class="p_user"><p>You</p></td>  
-                <td class="p_msg"><p>${data.msg}</p></td>
-            </tr>`;
+            else if(data.imgUrl){
+                const ele =`
+                <tr class="parent_user">
+                    <td class="p_user"><p>You</p></td>
+                    <td class="p_msg"><div class="file_msg" ><img src=${data.imgUrl} alt=""></div></td>
+                </tr>`
+                chat_parent.innerHTML += ele;
+            }
             
-            chat_parent.innerHTML+=ele;
         }else{
 
             // if msg is from group, then find the who send it to group else read the contact name from LS
@@ -321,13 +331,28 @@ async function displayingMessages(array){
             // reading the contact_name from local storage 
             const contact_name= JSON.parse(localStorage.getItem('isgroup')) ? contact : localStorage.getItem('contact_name');
             console.log(contact_name)
+            
+            let child_ele;
+            if(data.msg ==='jani'){
+                child_ele=``
+            }
 
-            const ele =`
-            <tr class="child_user">
-                <td class="p_user"><p>${contact_name}</p></td>
-                <td class="p_msg"><p>${data.msg}</p></td>
-            </tr>`;
-            chat_parent.innerHTML+=ele;
+            if(data.msg){
+                const ele =`    
+                <tr class="child_user">
+                    <td class="p_user"><p>${contact_name}</p></td>
+                    <td class="p_msg"><p>${data.msg}</p></td>
+                </tr>`;
+                chat_parent.innerHTML+=ele;
+            }else if(data.imgUrl){
+                const ele =`    
+                <tr class="child_user">
+                    <td class="p_user"><p>${contact_name}</p></td>
+                    <td class="p_msg"><div class="file_msg" ><img src=${data.imgUrl} alt=""></div></td>
+                </tr>`;
+                chat_parent.innerHTML+=ele;
+
+            }
         }
         
 
@@ -344,28 +369,59 @@ async function displayingMessages(array){
     
 }
 
+// changin the chat type by click on send File button
+document.getElementById('input_type').addEventListener('click',(e)=>{
+    e.preventDefault();
+
+    const input_field = document.getElementById('chat_content');
+
+    input_field.type = input_field.type ==='text'? 'file' :'text' ;
+
+    e.target.innerText =e.target.innerText ==='File' ? 'Text' : 'File';
+})
+
 
 // sending message to a active person in the interface
 document.getElementById('send_btn').addEventListener('click',(e)=>{
     e.preventDefault();
-    const msg = document.getElementById('chat_text').value;
+    const input_field = document.getElementById('chat_content');
     const token= localStorage.getItem('token');
     const send_to = localStorage.getItem('send_to');
     console.log(send_to)
 
     const path = JSON.parse(localStorage.getItem('isgroup')) ? 'chat/send-to-grp' : 'chat/send' ;
-    //console.log(msg,'       ', token)
 
-    axios.post(`http://localhost:5000/${path}?send_to=${send_to}`,{msg},{headers:{"authorization":token}})
-    .then(result=>{
-        console.log(result);
+    // if the input field is file type, then uploading that image in s3 and show it in interface
+    if(input_field.type === 'file'){
 
-        // displaying the new msg will triggered by setTimeInterval function and store that msg in LS
+        console.log(input_field.files[0])   
+        const file = new FormData();
+        file.append('image',input_field.files[0]);
+        
+        console.log(file)
+        axios.post(`http://localhost:5000/${path}/file?send_to=${send_to}`,file,{headers:{"authorization":token}})
+        .then(result =>{
+            console.log(result)
+        })
+        .catch(err => console.log(err));
 
-        // removing the text from the input field
-        document.getElementById('chat_text').value ='';
-    })  
-    .catch(err =>console.log(err));
+    }
+    // if the input field is text type, store msg in database 
+    else if( input_field.type ==='text'){
+        
+        const msg = input_field.value;
+        axios.post(`http://localhost:5000/${path}?send_to=${send_to}`,{msg},{headers:{"authorization":token}})
+        .then(result=>{
+            console.log(result);
+    
+            // displaying the new msg will triggered by setTimeInterval function and store that msg in LS
+    
+            // removing the text from the input field
+            document.getElementById('chat_content').value ='';
+        })  
+        .catch(err =>console.log(err));
+    }
+
 
 })  
 

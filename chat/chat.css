@@ -256,6 +256,15 @@ button{
 .admin_controlls.active{
     display: flex;
 }
+.file_msg{
+    height: 60%;
+    width: 60%;
+}
+.file_msg img{
+    width: inherit;
+    height: inherit;
+    object-fit: cover;
+}
 .chat_history{
     position: relative;
     width: 100%;
