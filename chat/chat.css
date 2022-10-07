@@ -69,6 +69,11 @@ table{
     align-items: center;
     justify-content: center;
 }
+.action_bar button{
+    margin-left: 0.5rem;
+    width: 7rem;
+}
+
 .action_bar_2{
     position: relative;
     width: 100%;
@@ -182,7 +187,7 @@ table{
     display: flex;
     align-items: center;
     background-color: #c5e1eb;
-    padding: 5px;
+    padding: 0 5px;
     border-radius: 1rem;
 }
 .profile div p, h4{
@@ -226,6 +231,7 @@ tr td.user{
 }
 button{
     cursor: pointer;
+    width: 7rem;
 }
 
 /*  chat history table container  */

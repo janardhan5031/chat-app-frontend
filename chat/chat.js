@@ -1,4 +1,10 @@
 
+// sign out action
+document.getElementById('sign_out_btn').addEventListener('click',(e)=>{
+    e.preventDefault();
+    localStorage.clear();   // clear all the existing data from LS
+    window.location.reload();
+})
 
 const token = localStorage.getItem('token');
 // if user is not logged in, then redirecting him to login page
@@ -109,24 +115,31 @@ function displayAllUsers(list){
 }
 
 // showing a particular person's convesation by click on him
-document.getElementById('members_table').addEventListener('click',(e)=>{
+document.getElementById('members_table').addEventListener('click',async (e)=>{
 
     //console.log(e.target.parentElement.parentElement.classList.contains('groupConversation'))
 
     // if the clicked element is group element, store group activation, id in LS
     if(e.target.parentElement.parentElement.classList.contains('groupConversation')){
-        const parent = e.target.parentElement.parentElement;
-        localStorage.setItem('isgroup',true);
-        localStorage.setItem('send_to',parent.id);
-        
-        conversaion_name = parent.children[1].children[0].innerText;
-        console.log(conversaion_name)
-        localStorage.setItem('contact_name',conversaion_name);
+        try{
 
-        display_user_details_in_chat_module(conversaion_name)
-
-
-        getConversation(parent.id);
+            const parent = e.target.parentElement.parentElement;
+            localStorage.setItem('isgroup',true);
+            localStorage.setItem('send_to',parent.id);
+            
+            conversaion_name = parent.children[1].children[0].innerText;
+            console.log(conversaion_name)
+            localStorage.setItem('contact_name',conversaion_name);
+    
+            await get_group_members_from_backend();
+    
+            await display_user_details_in_chat_module(conversaion_name)
+    
+    
+            await getConversation(parent.id);
+        }catch(err){
+            console.log(err)
+        }
     }else{
 
         const parent = e.target.parentElement.parentElement;
@@ -150,12 +163,24 @@ async function display_user_details_in_chat_module(conversaion_name){
    
     const parent = document.getElementById('contact_profile');
 
+
     const ele =`
     <div class="add_group_member" >
     <button type="button" id="group_controll">controlls</button>
     </div>`;
-
-    button = await JSON.parse(localStorage.getItem('isgroup')) ? ele : '';
+    const isgroup = JSON.parse(localStorage.getItem('isgroup'));
+    const curr_user_id = JSON.parse(localStorage.getItem('user_data')).id;
+    
+    let button='';
+    let isadmin;
+    if(isgroup){
+        JSON.parse(localStorage.getItem('group_members')).forEach(member =>{
+            if(member.userId === curr_user_id && member.isadmin ===true){
+                button = ele; 
+                isadmin=true;
+            }
+        })
+    }
 
     parent.innerHTML = `
     <div class="profile" id=" usr_id">
@@ -167,11 +192,9 @@ async function display_user_details_in_chat_module(conversaion_name){
             <p>last seed at</p>
         </div>
         ${button}
-    </div>`
-    if(JSON.parse(localStorage.getItem('isgroup'))){
+    </div>`;
 
-        await get_group_members_from_backend();
-
+    if(isgroup && isadmin){
         await group_controlls();
     }
 
@@ -241,8 +264,16 @@ async function getMsgsFromBackend(){
                 localStorage.setItem('old_msgs',JSON.stringify(old_msgs.concat(new_msgs)))
             }
 
+            // response data is in descending order , we need to rotate the entire array to get ascending order
+            const messages =result.data;
+            let i=0;
+            while(i<messages.length){
+                messages.unshift(messages.pop());
+                i++;
+            }
+
             // displaying the new msg in frontend
-            await displayingMessages(result.data);
+            await displayingMessages(messages);
            
         }else if(result.status ===203){
             //window.alert(result.data.msg);
@@ -332,10 +363,7 @@ async function displayingMessages(array){
             const contact_name= JSON.parse(localStorage.getItem('isgroup')) ? contact : localStorage.getItem('contact_name');
             console.log(contact_name)
             
-            let child_ele;
-            if(data.msg ==='jani'){
-                child_ele=``
-            }
+
 
             if(data.msg){
                 const ele =`    
@@ -490,12 +518,12 @@ function showing_group_in_interface(groupId,groupName){
 
 
 // getting active group members from backend
-async function get_group_members_from_backend(){
+async function  get_group_members_from_backend(){
     const groupId = localStorage.getItem('send_to');
     const token = localStorage.getItem('token');
 
     // getting the all users of respective active group
-    axios.get(`http://localhost:5000/group/get-members?groupId=${groupId}`,{headers:{"authorization":token}})
+    await axios.get(`http://localhost:5000/group/get-members?groupId=${groupId}`,{headers:{"authorization":token}})
     .then(result=>{
         console.log(result)
         if(result.status ===200){
